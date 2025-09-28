@@ -1,0 +1,65 @@
+services:
+  - type: web
+    name: cov-game
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        headers:
+          - key: X-Frame-Options
+            value: SAMEORIGIN
+          - key: X-Content-Type-Options
+            value: nosniff
+          - key: Referrer-Policy
+            value: strict-origin-when-cross-origin
+          - key: Cache-Control
+            value: public, max-age=31536000
+      - path: /index.html
+        headers:
+          - key: Cache-Control
+            value: public, max-age=0, must-revalidate
+      - path: "*.html"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=0, must-revalidate
+      - path: "*.js"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=31536000
+          - key: Content-Type
+            value: application/javascript
+      - path: "*.css"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=31536000
+          - key: Content-Type
+            value: text/css
+      - path: "*.glb"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=31536000
+          - key: Content-Type
+            value: model/gltf-binary
+      - path: "*.gltf"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=31536000
+          - key: Content-Type
+            value: model/gltf+json
+      - path: "*.fbx"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=31536000
+          - key: Content-Type
+            value: application/octet-stream
+      - path: "*.png"
+        headers:
+          - key: Cache-Control
+            value: public, max-age=31536000
+          - key: Content-Type
+            value: image/png
