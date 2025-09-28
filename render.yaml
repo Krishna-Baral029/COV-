@@ -2,7 +2,7 @@ services:
   - type: web
     name: cov-game
     env: static
-    buildCommand: ""
+    buildCommand: echo "Static site - no build required"
     staticPublishPath: .
     routes:
       - type: rewrite
