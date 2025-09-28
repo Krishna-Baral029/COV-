@@ -1222,13 +1222,13 @@ function buildCityChunk(cx, cz) {
     vRoad.position.set(originX + CHUNK_SIZE / 2, 0.01, originZ + CHUNK_SIZE / 2);
     group.add(vRoad);
 
-    // Buildings: place 4 around the cross
+    // Buildings: place 4 around the cross (slightly increased gap)
     const blockSize = 8;
     const placements = [
-        { x: originX + 6, z: originZ + 6 },
-        { x: originX + CHUNK_SIZE - 6, z: originZ + 6 },
-        { x: originX + 6, z: originZ + CHUNK_SIZE - 6 },
-        { x: originX + CHUNK_SIZE - 6, z: originZ + CHUNK_SIZE - 6 },
+        { x: originX + 7, z: originZ + 7 },
+        { x: originX + CHUNK_SIZE - 7, z: originZ + 7 },
+        { x: originX + 7, z: originZ + CHUNK_SIZE - 7 },
+        { x: originX + CHUNK_SIZE - 7, z: originZ + CHUNK_SIZE - 7 },
     ];
     placements.forEach(p => group.add(createBuildingMesh(p.x, p.z, blockSize)));
 
