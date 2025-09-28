@@ -33,6 +33,7 @@ let isPointerLocked = false;
 let cameraYaw = 0;   // radians, around Y
 let cameraPitch = 0; // radians, up/down (clamped)
 let isPaused = false;
+let isInGame = false; // true only after city is created
 
 // Audio context for sound effects
 let audioContext = null;
@@ -208,7 +209,9 @@ function setupPointerLock() {
 
     canvas.addEventListener('click', function() {
         // Only request lock once the city is active
-        canvas.requestPointerLock?.();
+        if (isInGame) {
+            canvas.requestPointerLock?.();
+        }
     });
 
     document.addEventListener('pointerlockchange', onPointerLockChange, false);
@@ -225,7 +228,7 @@ function setupPointerLock() {
 
     // ESC to show pause menu
     window.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && isInGame) {
             if (document.pointerLockElement === canvas) {
                 document.exitPointerLock?.();
             }
@@ -404,6 +407,7 @@ function createCity() {
 
     cityGroup.visible = true;
     console.log('City environment created successfully');
+    isInGame = true;
 }
 
 // Return to lobby: restore UI, hide city, show lobby ground
@@ -441,6 +445,8 @@ function returnToLobby() {
     camera.position.set(DEFAULT_CAMERA_POS.x, DEFAULT_CAMERA_POS.y, DEFAULT_CAMERA_POS.z);
     controls.target.set(0, 1, 0);
     controls.update();
+
+    isInGame = false;
 }
 
 // Create city blocks with buildings
@@ -1013,6 +1019,9 @@ function setupUIEvents() {
     const backBtn = document.getElementById('back-to-lobby-btn');
     const pauseMenu = document.getElementById('pause-menu');
     const canvas = renderer ? renderer.domElement : null;
+    const storeBtn = document.getElementById('store-btn');
+    const storeModal = document.getElementById('store-modal');
+    const closeStoreBtn = document.getElementById('close-store-btn');
 
     if (resumeBtn) {
         resumeBtn.addEventListener('click', function() {
@@ -1025,6 +1034,18 @@ function setupUIEvents() {
     if (backBtn) {
         backBtn.addEventListener('click', function() {
             returnToLobby();
+        });
+    }
+
+    // Lobby STORE button opens gun showcase
+    if (storeBtn) {
+        storeBtn.addEventListener('click', function() {
+            if (storeModal) storeModal.style.display = 'flex';
+        });
+    }
+    if (closeStoreBtn) {
+        closeStoreBtn.addEventListener('click', function() {
+            if (storeModal) storeModal.style.display = 'none';
         });
     }
 }
@@ -1041,8 +1062,8 @@ function animate() {
         return;
     }
 
-    // Update movement if character exists
-    if (character) {
+    // Update movement only during gameplay
+    if (character && isInGame && !isPaused) {
         updateCharacterMovement(delta);
     }
     
