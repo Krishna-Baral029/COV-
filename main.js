@@ -32,6 +32,7 @@ const POINTER_SENSITIVITY = 0.0045;
 let isPointerLocked = false;
 let cameraYaw = 0;   // radians, around Y
 let cameraPitch = 0; // radians, up/down (clamped)
+let isPaused = false;
 
 // Audio context for sound effects
 let audioContext = null;
@@ -167,7 +168,7 @@ function init() {
 function setupInput() {
     window.addEventListener('keydown', function(e) {
         const key = e.key.toLowerCase();
-        if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+        if (key === 'w' || key === 'a' || key === 's' || key === 'd' || key === 'shift') {
             keysPressed[key] = true;
             e.preventDefault();
         }
@@ -175,7 +176,7 @@ function setupInput() {
     
     window.addEventListener('keyup', function(e) {
         const key = e.key.toLowerCase();
-        if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+        if (key === 'w' || key === 'a' || key === 's' || key === 'd' || key === 'shift') {
             keysPressed[key] = false;
             e.preventDefault();
         }
@@ -186,12 +187,15 @@ function setupInput() {
 function setupPointerLock() {
     const canvas = renderer.domElement;
     const crosshair = document.getElementById('crosshair');
+    const pauseMenu = document.getElementById('pause-menu');
 
     function onPointerLockChange() {
         isPointerLocked = document.pointerLockElement === canvas;
         if (isPointerLocked) {
             crosshair.style.display = 'block';
             document.body.style.cursor = 'none';
+            if (pauseMenu) pauseMenu.style.display = 'none';
+            isPaused = false;
         } else {
             crosshair.style.display = 'none';
             document.body.style.cursor = 'default';
@@ -217,6 +221,17 @@ function setupPointerLock() {
         cameraPitch -= e.movementY * POINTER_SENSITIVITY;
         const maxPitch = Math.PI / 3; // clamp ~60 degrees
         cameraPitch = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch));
+    });
+
+    // ESC to show pause menu
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (document.pointerLockElement === canvas) {
+                document.exitPointerLock?.();
+            }
+            if (pauseMenu) pauseMenu.style.display = 'flex';
+            isPaused = true;
+        }
     });
 }
 
@@ -389,6 +404,43 @@ function createCity() {
 
     cityGroup.visible = true;
     console.log('City environment created successfully');
+}
+
+// Return to lobby: restore UI, hide city, show lobby ground
+function returnToLobby() {
+    // Hide pause menu
+    const pauseMenu = document.getElementById('pause-menu');
+    if (pauseMenu) pauseMenu.style.display = 'none';
+    isPaused = false;
+
+    // Exit pointer lock
+    document.exitPointerLock?.();
+
+    // Show lobby UI and group
+    const lobbyUI = document.getElementById('game-lobby');
+    if (lobbyUI) lobbyUI.style.display = 'block';
+    if (lobbyGroup) lobbyGroup.visible = true;
+
+    // Hide and clear city
+    if (cityGroup) {
+        cityGroup.visible = false;
+        while (cityGroup.children.length > 0) {
+            const child = cityGroup.children.pop();
+            if (!child) continue;
+            child.traverse?.(function(node) {
+                if (node.geometry) node.geometry.dispose?.();
+                if (node.material) {
+                    if (Array.isArray(node.material)) node.material.forEach(m => m.dispose?.());
+                    else node.material.dispose?.();
+                }
+            });
+        }
+    }
+
+    // Reset camera
+    camera.position.set(DEFAULT_CAMERA_POS.x, DEFAULT_CAMERA_POS.y, DEFAULT_CAMERA_POS.z);
+    controls.target.set(0, 1, 0);
+    controls.update();
 }
 
 // Create city blocks with buildings
@@ -955,6 +1007,26 @@ function setupUIEvents() {
             controlsPanel.style.display = controlsPanel.style.display === 'none' ? 'block' : 'none';
         }
     });
+
+    // Pause menu buttons
+    const resumeBtn = document.getElementById('resume-btn');
+    const backBtn = document.getElementById('back-to-lobby-btn');
+    const pauseMenu = document.getElementById('pause-menu');
+    const canvas = renderer ? renderer.domElement : null;
+
+    if (resumeBtn) {
+        resumeBtn.addEventListener('click', function() {
+            if (pauseMenu) pauseMenu.style.display = 'none';
+            isPaused = false;
+            canvas?.requestPointerLock?.();
+        });
+    }
+
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            returnToLobby();
+        });
+    }
 }
 
 // Animation loop
@@ -962,6 +1034,12 @@ function animate() {
     requestAnimationFrame(animate);
 
     const delta = clock ? clock.getDelta() : 0.016;
+
+    if (isPaused) {
+        // Still render the current frame so the pause menu overlays correctly
+        renderer.render(scene, camera);
+        return;
+    }
 
     // Update movement if character exists
     if (character) {
@@ -1005,7 +1083,8 @@ function updateCharacterMovement(delta) {
 
     const isMoving = move.lengthSq() > 1e-6;
     if (isMoving) {
-        move.normalize().multiplyScalar(MOVE_SPEED * delta);
+        const speed = MOVE_SPEED * (keysPressed['shift'] && keysPressed['w'] ? SPRINT_MULTIPLIER : 1);
+        move.normalize().multiplyScalar(speed * delta);
         character.position.add(move);
 
         // Smoothly rotate character to face movement direction
@@ -1026,8 +1105,10 @@ function updateCharacterMovement(delta) {
         character.position.y + offsetY,
         character.position.z + offsetZ
     );
-    camera.position.lerp(desiredCameraPos, 0.15);
-    controls.target.lerp(character.position.clone().add(new THREE.Vector3(0, 1.2, 0)), 0.25);
+    const camLerp = isPointerLocked ? 0.25 : 0.15; // slightly faster when locked
+    const targetLerp = isPointerLocked ? 0.35 : 0.25;
+    camera.position.lerp(desiredCameraPos, camLerp);
+    controls.target.lerp(character.position.clone().add(new THREE.Vector3(0, 1.2, 0)), targetLerp);
 
     // Stream city chunks as the character moves (always keep character at center of chunks)
     updateCityStreaming();
