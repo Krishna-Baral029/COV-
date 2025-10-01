@@ -1,7 +1,28 @@
+#camera-tuning-modal {
+    font-family: 'UrbanJungle', 'GrungeCOV', sans-serif;
+}
+
+#camera-tuning-modal button {
+    font-family: inherit;
+}
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    /* Disable text selection globally */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+img {
+    /* Disable image dragging and selection */
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
 }
 
 @font-face {
@@ -23,6 +44,16 @@ body {
     background-color: #0a0a0a;
     color: #d5b980;
     overflow: hidden;
+    /* Disable text selection */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    /* Disable image dragging */
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
 }
 
 #container {
@@ -452,4 +483,6 @@ button {
         opacity: 0;
         transform: translate(-50%, -50%) scale(0.9);
     }
-} 
+}
+
+/* dev-stats overlay removed */

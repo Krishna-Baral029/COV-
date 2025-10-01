@@ -48,7 +48,7 @@ COV/
 ├── main.js                 # Core game logic and Three.js setup
 ├── styles.css              # Game styling and UI
 ├── render.yaml             # Render deployment configuration
-├── character_high_quality.glb # 3D character model
+├── base (1).glb # 3D character model
 ├── Standing Idle.fbx       # Alternative character animation
 ├── COV.png                 # Game logo
 ├── Lobby.png              # Lobby background
