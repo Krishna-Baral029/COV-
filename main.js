@@ -266,9 +266,6 @@ function init() {
     // Load the character model (idle base), then load walk animation
     loadCharacterModel();
     
-    // Set up camera controls in UI
-    setupCameraControls();
-    
     // Set up debugging tools
     setupDebugTools();
     
@@ -1151,180 +1148,6 @@ function loadCharacterModel() {
     );
 }
 
-// UI controls for camera position
-function setupCameraControls() {
-    // Camera position sliders
-    const cameraX = document.getElementById('camera-x');
-    const cameraY = document.getElementById('camera-y');
-    const cameraZ = document.getElementById('camera-z');
-    
-    const cameraXValue = document.getElementById('camera-x-value');
-    const cameraYValue = document.getElementById('camera-y-value');
-    const cameraZValue = document.getElementById('camera-z-value');
-    
-    // Initialize values
-    cameraXValue.textContent = cameraX.value;
-    cameraYValue.textContent = cameraY.value;
-    cameraZValue.textContent = cameraZ.value;
-    
-    // X position
-    cameraX.addEventListener('input', function() {
-        camera.position.x = parseFloat(this.value);
-        cameraXValue.textContent = this.value;
-        controls.update();
-    });
-    
-    // Y position
-    cameraY.addEventListener('input', function() {
-        camera.position.y = parseFloat(this.value);
-        cameraYValue.textContent = this.value;
-        controls.update();
-    });
-    
-    // Z position
-    cameraZ.addEventListener('input', function() {
-        camera.position.z = parseFloat(this.value);
-        cameraZValue.textContent = this.value;
-        controls.update();
-    });
-    
-    // Reset camera
-    document.getElementById('reset-camera').addEventListener('click', function() {
-        // Reset camera position
-        camera.position.set(
-            DEFAULT_CAMERA_POS.x,
-            DEFAULT_CAMERA_POS.y,
-            DEFAULT_CAMERA_POS.z
-        );
-        
-        // Reset controls target
-        controls.target.set(0, 0.8, 0);
-        controls.update();
-        
-        // Reset sliders
-        cameraX.value = DEFAULT_CAMERA_POS.x;
-        cameraY.value = DEFAULT_CAMERA_POS.y;
-        cameraZ.value = DEFAULT_CAMERA_POS.z;
-        
-        cameraXValue.textContent = DEFAULT_CAMERA_POS.x;
-        cameraYValue.textContent = DEFAULT_CAMERA_POS.y;
-        cameraZValue.textContent = DEFAULT_CAMERA_POS.z;
-    });
-}
-
-// Create dynamic in-game camera tuning UI
-function createCameraTuningUI() {
-    if (document.getElementById('camera-tuning-modal')) return; // already exists
-
-    const modal = document.createElement('div');
-    modal.id = 'camera-tuning-modal';
-    modal.style.position = 'absolute';
-    modal.style.top = '50%';
-    modal.style.left = '50%';
-    modal.style.transform = 'translate(-50%, -50%)';
-    modal.style.background = 'rgba(0,0,0,0.85)';
-    modal.style.color = '#fff';
-    modal.style.padding = '24px 28px';
-    modal.style.border = '1px solid #444';
-    modal.style.borderRadius = '8px';
-    modal.style.zIndex = '9999';
-    modal.style.width = '320px';
-    modal.style.boxShadow = '0 12px 32px rgba(0,0,0,0.45)';
-
-    modal.innerHTML = `
-        <h3 style="margin-top:0;margin-bottom:12px;font-weight:600;font-size:18px;">Camera Follow Calibration</h3>
-        <p style="margin-bottom:18px;font-size:14px;line-height:1.5;color:#bbb;">
-            Adjust the follow height, distance, and eye pitch (look up/down).<br>
-            <strong style="color:#0f9;">Default: Height 4.25 | Distance 8.14 | Pitch 23°</strong>
-        </p>
-        <label style="display:block;margin-bottom:6px;font-size:13px;">Follow Height</label>
-        <input id="camera-height-slider" type="range" min="${CAMERA_HEIGHT_RANGE.min}" max="${CAMERA_HEIGHT_RANGE.max}" step="0.05" value="${cameraFollowHeight}" style="width:100%;">
-        <div style="margin-bottom:16px;font-size:13px;color:#aaa;">
-            Current Height: <span id="camera-height-value">${cameraFollowHeight.toFixed(2)}</span>
-        </div>
-        <label style="display:block;margin-bottom:6px;font-size:13px;">Follow Distance</label>
-        <input id="camera-distance-slider" type="range" min="${CAMERA_DISTANCE_RANGE.min}" max="${CAMERA_DISTANCE_RANGE.max}" step="0.1" value="${cameraFollowDistance}" style="width:100%;">
-        <div style="margin-bottom:20px;font-size:13px;color:#aaa;">
-            Current Distance: <span id="camera-distance-value">${cameraFollowDistance.toFixed(1)}</span>
-        </div>
-        <label style="display:block;margin-bottom:6px;font-size:13px;">Eye Pitch (deg)</label>
-        <input id="camera-pitch-slider" type="range" min="${CAMERA_PITCH_RANGE_DEG.min}" max="${CAMERA_PITCH_RANGE_DEG.max}" step="1" value="${DEFAULT_CAMERA_PITCH_DEG}" style="width:100%;">
-        <div style="margin-bottom:20px;font-size:13px;color:#aaa;">
-            Current Pitch: <span id="camera-pitch-value">${DEFAULT_CAMERA_PITCH_DEG.toFixed(0)}</span>°
-        </div>
-        <div style="display:flex;justify-content:space-between;gap:12px;">
-            <button id="camera-cancel-btn" style="flex:1;background:#333;border:1px solid #555;color:#eee;padding:8px 0;border-radius:4px;cursor:pointer;">Cancel</button>
-            <button id="camera-apply-btn" style="flex:1;background:#1e8755;border:1px solid #2aa168;color:#fff;padding:8px 0;border-radius:4px;cursor:pointer;font-weight:600;">Apply & Make Default</button>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const heightSlider = modal.querySelector('#camera-height-slider');
-    const heightValueLabel = modal.querySelector('#camera-height-value');
-    const distanceSlider = modal.querySelector('#camera-distance-slider');
-    const distanceValueLabel = modal.querySelector('#camera-distance-value');
-    const pitchSlider = modal.querySelector('#camera-pitch-slider');
-    const pitchValueLabel = modal.querySelector('#camera-pitch-value');
-
-    heightSlider.addEventListener('input', () => {
-        cameraFollowHeight = clampNumber(parseFloat(heightSlider.value), CAMERA_HEIGHT_RANGE.min, CAMERA_HEIGHT_RANGE.max);
-        heightValueLabel.textContent = cameraFollowHeight.toFixed(2);
-    });
-
-    distanceSlider.addEventListener('input', () => {
-        cameraFollowDistance = clampNumber(parseFloat(distanceSlider.value), CAMERA_DISTANCE_RANGE.min, CAMERA_DISTANCE_RANGE.max);
-        distanceValueLabel.textContent = cameraFollowDistance.toFixed(1);
-    });
-
-    pitchSlider.addEventListener('input', () => {
-        const deg = clampNumber(parseFloat(pitchSlider.value), CAMERA_PITCH_RANGE_DEG.min, CAMERA_PITCH_RANGE_DEG.max);
-        pitchValueLabel.textContent = deg.toFixed(0);
-        cameraPitch = deg * Math.PI / 180;
-    });
-
-    modal.querySelector('#camera-cancel-btn').addEventListener('click', () => {
-        // Reset to defaults instead of saved values
-        cameraFollowHeight = DEFAULT_CAMERA_FOLLOW_HEIGHT;
-        cameraFollowDistance = DEFAULT_CAMERA_FOLLOW_DISTANCE;
-        heightSlider.value = cameraFollowHeight;
-        heightValueLabel.textContent = cameraFollowHeight.toFixed(2);
-        distanceSlider.value = cameraFollowDistance;
-        distanceValueLabel.textContent = cameraFollowDistance.toFixed(1);
-        const defPitchDeg = 23;
-        pitchSlider.value = defPitchDeg;
-        pitchValueLabel.textContent = defPitchDeg.toFixed(0);
-        cameraPitch = defPitchDeg * Math.PI / 180;
-        closeCameraTuningModal();
-    });
-
-    modal.querySelector('#camera-apply-btn').addEventListener('click', () => {
-        localStorage?.setItem('cov_camera_follow_height', String(cameraFollowHeight));
-        localStorage?.setItem('cov_camera_follow_distance', String(cameraFollowDistance));
-        const currentPitchDeg = clampNumber(parseFloat(pitchSlider.value), CAMERA_PITCH_RANGE_DEG.min, CAMERA_PITCH_RANGE_DEG.max);
-        localStorage?.setItem('cov_camera_pitch_deg', String(currentPitchDeg));
-        closeCameraTuningModal();
-        alert(`Camera updated. Height: ${cameraFollowHeight.toFixed(2)}, Distance: ${cameraFollowDistance.toFixed(1)}, Pitch: ${currentPitchDeg.toFixed(0)}°.`);
-    });
-}
-
-function closeCameraTuningModal() {
-    const modal = document.getElementById('camera-tuning-modal');
-    if (modal) modal.remove();
-}
-
-function readStoredNumber(key, fallback) {
-    if (typeof localStorage === 'undefined') return fallback;
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function clampNumber(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-}
-
 // Handle window resize
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -1458,14 +1281,6 @@ function setupUIEvents() {
             }
         });
     }
-    
-    // Toggle controls panel visibility with ~ key
-    window.addEventListener('keydown', function(e) {
-        if (e.key === '`' || e.key === '~') {
-            const controlsPanel = document.getElementById('controls-panel');
-            controlsPanel.style.display = controlsPanel.style.display === 'none' ? 'block' : 'none';
-        }
-    });
 
     // Pause menu buttons
     const resumeBtn = document.getElementById('resume-btn');
@@ -1501,14 +1316,6 @@ function setupUIEvents() {
             if (storeModal) storeModal.style.display = 'none';
         });
     }
-
-    // Expose camera calibration via keyboard shortcut (Ctrl+Shift+C)
-    window.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
-            e.preventDefault();
-            createCameraTuningUI();
-        }
-    });
 
     // Hide crosshair permanently (user request)
     const crosshair = document.getElementById('crosshair');
